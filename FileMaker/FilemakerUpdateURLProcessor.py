@@ -150,11 +150,10 @@ class FilemakerUpdateURLProcessor(Processor):
             update = self.getLatestFilemakerInstaller()
             self.env["version"] = update["version"]
             url = update["url"]
-            self.output("URL found '%s'" % url)
+            self.output("URL found '%s'" % url, verbose_level=2)
             self.env["url"] = url
             self.env["package_name"] = update["name"]
             self.env["package_file"] = os.path.basename(urlparse.urlsplit(url).path)
-            self.output("Output is as follows: %s" % self.env)
         except BaseException as err:
             # handle unexpected errors here
             raise ProcessorError(err)
