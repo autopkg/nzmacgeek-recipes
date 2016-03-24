@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Description</key>
+	<string>Downloads latest FileMaker Pro disk image and extracts the package, subsequently uploading it to Casper.</string>
+	<key>Identifier</key>
+	<string>com.github.nzmacgeek.jss.filemaker</string>
+	<key>Input</key>
+	<dict>
+		<key>CATEGORY</key>
+		<string>Applications</string>
+		<key>NAME</key>
+		<string>FileMaker Pro</string>
+	</dict>
+	<key>MinimumVersion</key>
+	<string>0.2.9</string>
+	<key>ParentRecipe</key>
+	<string>com.github.nzmacgeek.download.filemaker</string>
+	<key>Process</key>
+	<array>
+		<dict>
+			<key>Processor</key>
+			<string>JSSImporter</string>
+			<key>Arguments</key>
+			<dict>
+					<key>prod_name</key>
+					<string>%NAME%</string>
+					<key>category</key>
+					<string>%CATEGORY%</string>
+					<key>package_info</key>
+					<string>%NAME% %version%</string>
+					<key>package_notes</key>
+					<string>%NAME% packaged by AutoPkg</string>
+			</dict>
+		</dict>
+	</array>
+</dict>
+</plist>
