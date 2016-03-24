@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>Description</key>
-    <string>Downloads latest FileMaker Pro disk image and extracts the package.</string>
+    <string>Downloads latest FileMaker Pro updater disk image and extracts the package from within.</string>
     <key>Identifier</key>
     <string>com.github.nzmacgeek.download.filemaker</string>
     <key>Input</key>
