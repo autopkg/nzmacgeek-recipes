@@ -3,7 +3,7 @@
 <plist version="1.0">
   <dict>
     <key>Description</key>
-    <string>Downloads latest Osculator package, and copies the correct components in to the correct places.</string>
+    <string>Downloads latest Osculator disk image, and creates a package with the software within.</string>
     <key>Identifier</key>
     <string>com.github.nzmacgeek.osculator.pkg</string>
     <key>Input</key>
