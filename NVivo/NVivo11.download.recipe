@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Description</key>
+    <string>Downloads latest NVivo for Mac 11 package</string>
+    <key>Identifier</key>
+    <string>com.github.nzmacgeek.nvivo11.download</string>
+    <key>Input</key>
+    <dict>
+      <key>NAME</key>
+      <string>NVivo11</string>
+    </dict>
+    <key>Process</key>
+    <array>
+    <dict>
+      <key>Processor</key>
+      <string>CURLDownloader</string>
+      <key>Arguments</key>
+      <dict>
+        <key>url</key>
+        <string>http://download.qsrinternational.com/Software/NVivo11forMac/NVivo.dmg</string>
+      </dict>
+    </dict>
+    <dict>
+      <key>Processor</key>
+      <string>AppDmgVersioner</string>
+      <key>Arguments</key>
+      <dict>
+        <key>dmg_path</key>
+        <string>%pathname%</string>
+      </dict>
+    </dict>
+  </array>
+  </dict>
+</plist>
