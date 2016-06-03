@@ -22,6 +22,7 @@ import tempfile
 import os.path
 import os
 import pdb
+import re
 
 from autopkglib import Processor, ProcessorError
 
@@ -35,6 +36,11 @@ class ShareMounter(Processor):
 			"required": True,
 			"description": 
 				"Full path to share to mount."
+		},
+		"credential_file": {
+			"required": False,
+			"description":
+				"Full path to a plist containg the username and password to connect with, if necessary."
 		},
 		"mount_point": {
 			"required": False,
@@ -66,7 +72,22 @@ class ShareMounter(Processor):
 		else:
 			os.remove(tempfile)
 			return True
-		
+	
+	def get_share_credentials(self):
+		if 'credential_file' not in self.env:
+			return ''
+		else:
+			try:
+				cfile = open(self.env['credential_file'])
+				data = cfile.read()
+				cfile.close()
+				plist = FoundationPlist.readPlistFromString(data)
+				username = plist.get('Username')
+				password = plist.get('Password')
+			except BaseException as err:
+				raise ProcessorError(err)
+			return "%s:%s@" % (username, password)				
+	
 	def mount(self, sharepath, mount_point=None):
 		if 'fsmounts' not in self.env:
 			self.env['fsmounts'] = dict()
@@ -81,7 +102,10 @@ class ShareMounter(Processor):
 				mount_point = tempfile.mkdtemp(prefix='ShareMounter')
 		except BaseException as e:
 			raise ProcessorError("Could not write to mount point.")	
-				
+		
+		# do a string substitution on the share string just in case
+		creds = self.get_share_credentials()
+		sharepath = re.sub(r'!!CREDENTIALS!!', creds, sharepath)		
 		try:
 			proc = subprocess.Popen(("/sbin/mount_smbfs",
 									 sharepath,
