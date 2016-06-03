@@ -105,10 +105,10 @@ class ShareMounter(Processor):
 		
 		# do a string substitution on the share string just in case
 		creds = self.get_share_credentials()
-		sharepath = re.sub(r'!!CREDENTIALS!!', creds, sharepath)		
+		thesharepath = re.sub(r'!!CREDENTIALS!!', creds, sharepath)	
 		try:
 			proc = subprocess.Popen(("/sbin/mount_smbfs",
-									 sharepath,
+									 thesharepath,
 									 mount_point),
 									 stdout=subprocess.PIPE,
 									 stderr=subprocess.PIPE,
