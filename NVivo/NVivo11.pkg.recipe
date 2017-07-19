@@ -5,7 +5,7 @@
     <key>Description</key>
     <string>Downloads latest NVivo 11 for Mac disk image, and creates a package with the software within.</string>
     <key>Identifier</key>
-    <string>com.github.nzmacgeek.nvivo11.pkg</string>
+    <string>com.github.nzmacgeek.nvivo11</string>
     <key>Input</key>
     <dict>
       <key>NAME</key>
