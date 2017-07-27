@@ -45,6 +45,11 @@ class FilemakerUpdateURLProcessor(Processor):
             "required": True,
             "description":
                 "The major version for which updater should be downloaded"
+        },
+        "do_full_installer": {
+            "required": False,
+            "description":
+                "If this is set to true, the processor will look for a FULL install URL instead."
         }
     }
     output_variables = {
@@ -144,13 +149,30 @@ class FilemakerUpdateURLProcessor(Processor):
         update = self.findLatestUpdate(mac_updates)
         return update
 
+    def version_matcher(self, url):
+       	fname = os.path.basename(urlparse.urlsplit(url).path)
+	version_match = re.search(r"([0-9]{2}.[0-9]{0,2}.[0-9]{0,2}.[0-9]{0,4})", fname)
+        if version_match == None:
+	    raise ProcessorError("Something went wrong matching FMP update to full version.")
+	else:
+	    return version_match.group(1) 
+
     def main(self):
         try:
             url = ""
             update = self.getLatestFilemakerInstaller()
-            self.env["version"] = update["version"]
-            url = update["url"]
+            should_be_full = self.env.get("do_full_installer")
+            url = ""
+            if should_be_full == 1:
+		update["version"] = self.version_matcher(update["url"])
+                # extract the version from the URL string - this is a weird setup...
+		url = ("http://fmdl.filemaker.com/maint/107-85rel/fmp_%s.dmg" % update["version"])
+            else:
+                update["version"] = self.version_matcher(update["url"])
+                url = update["url"]
+	
             self.output("URL found '%s'" % url, verbose_level=2)
+            self.env["version"] = update["version"]
             self.env["url"] = url
             self.env["package_name"] = update["name"]
             self.env["package_file"] = os.path.basename(urlparse.urlsplit(url).path)
