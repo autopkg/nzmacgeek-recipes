@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Description</key>
+    <string>Downloads latest Authy Desktop full installer disk image</string>
+    <key>Identifier</key>
+    <string>com.github.nzmacgeek.download.authy</string>
+    <key>Input</key>
+    <dict>
+        <key>NAME</key>
+        <string>Authy Desktop</string>
+    </dict>
+    <key>Process</key>
+    <array>
+	<dict>
+	    <key>Processor</key>
+	    <string>CURLTextSearcher</string>
+	    <key>Arguments</key>
+	    <dict>
+		<key>url</key>
+		<string>https://authy.com/download/</string>
+		<key>result_output_var_name</key>
+		<string>url_to_download</string>
+		<key>re_pattern</key>
+		<string>value="(https://electron.*platform=darwin.*)"&gt;macOS</string>
+	    </dict>
+	</dict>
+        <dict>
+            <key>Processor</key>
+            <string>URLDownloader</string>
+	    <key>Arguments</key>
+	    <dict>
+		<key>url</key>
+		<string>%url_to_download%</string>
+		<key>filename</key>
+		<string>AuthyDesktop.dmg</string>
+	    </dict>
+        </dict>
+        <dict>
+                <key>Processor</key>
+                <string>Versioner</string>
+                <key>Arguments</key>
+                <dict>
+                        <key>input_plist_path</key>
+                        <string>%pathname%/Authy Desktop.app/Contents/Info.plist</string>
+                </dict>
+        </dict>
+    </array>
+</dict>
+</plist>
