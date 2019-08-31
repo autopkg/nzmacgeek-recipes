@@ -15,6 +15,7 @@
 # limitations under the License.
 """See docstring for ShareMounter class"""
 
+from __future__ import absolute_import
 import sys
 import subprocess
 import FoundationPlist
@@ -151,7 +152,7 @@ class ShareMounter(Processor):
 			raise ProcessorError("%s was not mounted" % sharepath)
 		
 	def main(self):
-		if self.env.has_key('unmount'):
+		if 'unmount' in self.env:
 			try:
 				self.unmount(self.env['file_share'])
 			except BaseException as err:
