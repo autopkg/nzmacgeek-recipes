@@ -36,9 +36,6 @@ UPDATE_FEED = "http://www.filemaker.com/support/updaters/updater_json.txt?id=123
 
 class FilemakerUpdateURLProcessor(Processor):
     """Provides a download URL for the most recent version of FileMaker Pro"""
-    # an enum-like hash to enable the variant of FileMaker versioning to be taken
-    # into account when versioning
-    patch_levels = {'a': 1, 'b': 2, 'c': 3, 'd': 4}
 
     description = __doc__
     input_variables = {
@@ -102,6 +99,10 @@ class FilemakerUpdateURLProcessor(Processor):
         return v1
 
     def findLatestUpdate(self, obj):
+        # an enum-like hash to enable the variant of FileMaker versioning to be taken
+        # into account when versioning
+        patch_levels = {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+
         updates = []
         versions = []
         for pkg in obj:
@@ -151,12 +152,12 @@ class FilemakerUpdateURLProcessor(Processor):
         return update
 
     def version_matcher(self, url):
-       	fname = os.path.basename(urlparse.urlsplit(url).path)
-	version_match = re.search(r"([0-9]{2}.[0-9]{0,2}.[0-9]{0,2}.[0-9]{0,4})", fname)
+        fname = os.path.basename(urlparse.urlsplit(url).path)
+        version_match = re.search(r"([0-9]{2}.[0-9]{0,2}.[0-9]{0,2}.[0-9]{0,4})", fname)
         if version_match == None:
-	    raise ProcessorError("Something went wrong matching FMP update to full version.")
-	else:
-	    return version_match.group(1) 
+            raise ProcessorError("Something went wrong matching FMP update to full version.")
+        else:
+            return version_match.group(1)
 
     def main(self):
         try:
@@ -165,13 +166,13 @@ class FilemakerUpdateURLProcessor(Processor):
             should_be_full = self.env.get("do_full_installer")
             url = ""
             if should_be_full == 1:
-		update["version"] = self.version_matcher(update["url"])
+                update["version"] = self.version_matcher(update["url"])
                 # extract the version from the URL string - this is a weird setup...
-		url = ("http://fmdl.filemaker.com/maint/107-85rel/fmp_%s.dmg" % update["version"])
+                url = ("http://fmdl.filemaker.com/maint/107-85rel/fmp_%s.dmg" % update["version"])
             else:
                 update["version"] = self.version_matcher(update["url"])
                 url = update["url"]
-	
+
             self.output("URL found '%s'" % url, verbose_level=2)
             self.env["version"] = update["version"]
             self.env["url"] = url
