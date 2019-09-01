@@ -23,10 +23,14 @@ from __future__ import absolute_import
 import json
 import re
 import os
-import urllib2
 from urllib2 import urlparse
 from operator import itemgetter
 from autopkglib import Processor, ProcessorError
+
+try:
+    from urllib.parse import urlopen  # For Python 3
+except ImportError:
+    from urllib2 import urlopen  # For Python 2
 
 __all__ = ["FilemakerUpdateURLProcessor"]
 
@@ -135,9 +139,8 @@ class FilemakerUpdateURLProcessor(Processor):
 
     def getLatestFilemakerInstaller(self):
         version_str = self.env.get("major_version")
-        req = urllib2.Request(UPDATE_FEED)
         try:
-            f = urllib2.urlopen(req)
+            f = urlopen(UPDATE_FEED)
             data = f.read()
             f.close()
         except BaseException as e:
