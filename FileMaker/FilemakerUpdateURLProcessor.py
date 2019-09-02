@@ -87,7 +87,7 @@ class FilemakerUpdateURLProcessor(Processor):
     def filterOutServerUpdates(self, obj):
         updates = []
         for pkg in obj:
-            if re.search('Server', pkg["product"]) == None:
+            if re.search(r'Server', pkg["product"]) == None:
                 updates.append(pkg)
         return updates
 
@@ -121,14 +121,14 @@ class FilemakerUpdateURLProcessor(Processor):
                 patch = version[2]
             build = '0'
             # look for a letter in the patchlevel
-            mo = re.search('([0-9]*)([A-Za-z]*)', patch)
+            mo = re.search(r'([0-9]*)([A-Za-z]*)', patch)
             if mo != None:
                 (patch, build) = mo.groups()
                 if build == '':
                     build = 0
                 else:
                     build = patch_levels[build]
-            mo = re.search('([0-9]*)v([0-9]*)', minor)
+            mo = re.search(r'([0-9]*)v([0-9]*)', minor)
             if mo != None:
                 (minor, build) = mo.groups()
             versions.append((major, minor, patch, build, version_str))
