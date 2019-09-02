@@ -87,7 +87,7 @@ class FilemakerUpdateURLProcessor(Processor):
     def filterOutServerUpdates(self, obj):
         updates = []
         for pkg in obj:
-            if re.search(r'Server', pkg["product"]) == None:
+            if re.search(r'Server', pkg["product"]) is None:
                 updates.append(pkg)
         return updates
 
@@ -122,14 +122,14 @@ class FilemakerUpdateURLProcessor(Processor):
             build = '0'
             # look for a letter in the patchlevel
             mo = re.search(r'([0-9]*)([A-Za-z]*)', patch)
-            if mo != None:
+            if mo is not None:
                 (patch, build) = mo.groups()
                 if build == '':
                     build = 0
                 else:
                     build = patch_levels[build]
             mo = re.search(r'([0-9]*)v([0-9]*)', minor)
-            if mo != None:
+            if mo is not None:
                 (minor, build) = mo.groups()
             versions.append((major, minor, patch, build, version_str))
         sorted_versions = sorted(versions, key=itemgetter(0,1,2,3), reverse=True)
@@ -159,7 +159,7 @@ class FilemakerUpdateURLProcessor(Processor):
     def version_matcher(self, url):
         fname = os.path.basename(urlparse.urlsplit(url).path)
         version_match = re.search(r"([0-9]{2}.[0-9]{0,2}.[0-9]{0,2}.[0-9]{0,4})", fname)
-        if version_match == None:
+        if version_match is None:
             raise ProcessorError("Something went wrong matching FMP update to full version.")
         else:
             return version_match.group(1)

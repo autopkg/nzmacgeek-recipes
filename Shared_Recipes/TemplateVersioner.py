@@ -101,7 +101,7 @@ class TemplateVersioner(Processor):
         if 'save_checksum' in self.env:
             self.update_checksum_file()
         else:
-            if self.check_for_changes() == False:
+            if self.check_for_changes() is False:
                 self.env["stop_processing"] = True
         self.env["version"] = datetime.strftime(datetime.now(), '%y%m%d') + '.0'
 

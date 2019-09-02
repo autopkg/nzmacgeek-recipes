@@ -95,10 +95,10 @@ class ShareMounter(Processor):
             raise ProcessorError("%s is already mounted." % sharepath)
 
         try:
-            if mount_point != None:
-                if self.is_mount_point_writeable(mount_point) != True:
+            if mount_point is not None:
+                if self.is_mount_point_writeable(mount_point) is not True:
                     mount_point = None
-            if mount_point == None:
+            if mount_point is None:
                 mount_point = tempfile.mkdtemp(prefix='ShareMounter')
         except BaseException as e:
             raise ProcessorError("Could not write to mount point.")
