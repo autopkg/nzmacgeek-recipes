@@ -16,18 +16,17 @@
 # limitations under the License.
 #
 
-
-
 """See docstring for FilemakerUpdateDMGExtractor class"""
 
 from __future__ import absolute_import
-import json
+
+import fnmatch
 import os
 import shutil
 import zipfile
-import fnmatch
-from autopkglib.DmgMounter import DmgMounter
+
 from autopkglib import Processor, ProcessorError
+from autopkglib.DmgMounter import DmgMounter
 
 __all__ = ["FilemakerUpdateExtractor"]
 

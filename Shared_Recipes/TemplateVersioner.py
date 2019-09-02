@@ -20,11 +20,13 @@
 # pylint: disable=e1101,f0401
 
 from __future__ import absolute_import
-from autopkglib import Processor, ProcessorError
-from datetime import datetime
-import os
-import hashlib
+
 import fnmatch
+import hashlib
+import os
+from datetime import datetime
+
+from autopkglib import Processor, ProcessorError
 
 __all__ = ["TemplateVersioner"]
 

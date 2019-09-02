@@ -16,15 +16,14 @@
 """See docstring for ShareMounter class"""
 
 from __future__ import absolute_import
-import sys
-import subprocess
-import FoundationPlist
-import tempfile
-import os.path
-import os
-import pdb
-import re
 
+import os
+import os.path
+import re
+import subprocess
+import tempfile
+
+import FoundationPlist
 from autopkglib import Processor, ProcessorError
 
 __all__ = ["ShareMounter"]
