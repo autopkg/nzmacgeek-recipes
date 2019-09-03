@@ -145,7 +145,7 @@ class FilemakerUpdateURLProcessor(Processor):
             f = urlopen(UPDATE_FEED)
             data = f.read()
             f.close()
-        except BaseException as e:
+        except Exception as e:
             raise ProcessorError("Can't get to Filemaker Updater feed: %s" % e)
 
         metadata = json.loads(data)
@@ -183,7 +183,7 @@ class FilemakerUpdateURLProcessor(Processor):
             self.env["url"] = url
             self.env["package_name"] = update["name"]
             self.env["package_file"] = os.path.basename(urlparse.urlsplit(url).path)
-        except BaseException as err:
+        except Exception as err:
             # handle unexpected errors here
             raise ProcessorError(err)
 

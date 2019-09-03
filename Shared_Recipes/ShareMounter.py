@@ -84,7 +84,7 @@ class ShareMounter(Processor):
                 plist = FoundationPlist.readPlistFromString(data)
                 username = plist.get('Username')
                 password = plist.get('Password')
-            except BaseException as err:
+            except Exception as err:
                 raise ProcessorError(err)
             return "%s:%s@" % (username, password)
 
@@ -100,7 +100,7 @@ class ShareMounter(Processor):
                     mount_point = None
             if mount_point is None:
                 mount_point = tempfile.mkdtemp(prefix='ShareMounter')
-        except BaseException as e:
+        except Exception as e:
             raise ProcessorError("Could not write to mount point.")
 
         # do a string substitution on the share string just in case
@@ -154,7 +154,7 @@ class ShareMounter(Processor):
         if 'unmount' in self.env:
             try:
                 self.unmount(self.env['file_share'])
-            except BaseException as err:
+            except Exception as err:
                 raise ProcessorError(err)
         else:
             mount_point = None
@@ -163,7 +163,7 @@ class ShareMounter(Processor):
 
             try:
                 self.mount(self.env['file_share'], mount_point)
-            except BaseException as err:
+            except Exception as err:
                 raise ProcessorError(err)
 
 if __name__ == "__main__":
