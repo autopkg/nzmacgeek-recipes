@@ -29,6 +29,10 @@
             <string>URLDownloader</string>
         </dict>
         <dict>
+            <key>Processor</key>
+            <string>EndOfCheckPhase</string>
+        </dict>
+        <dict>
           <key>Processor</key>
           <string>FilemakerUpdateExtractor</string>
           <key>Arguments</key>

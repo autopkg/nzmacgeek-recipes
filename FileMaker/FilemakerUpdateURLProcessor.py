@@ -19,13 +19,20 @@
 
 """See docstring for FilemakerUpdateURLProcessor class"""
 
+from __future__ import absolute_import
+
 import json
-import re
 import os
-import urllib2
-from urllib2 import urlparse
+import re
 from operator import itemgetter
+from urllib2 import urlparse
+
 from autopkglib import Processor, ProcessorError
+
+try:
+    from urllib.parse import urlopen  # For Python 3
+except ImportError:
+    from urllib2 import urlopen  # For Python 2
 
 __all__ = ["FilemakerUpdateURLProcessor"]
 
@@ -35,9 +42,6 @@ UPDATE_FEED = "http://www.filemaker.com/support/updaters/updater_json.txt?id=123
 
 class FilemakerUpdateURLProcessor(Processor):
     """Provides a download URL for the most recent version of FileMaker Pro"""
-    # an enum-like hash to enable the variant of FileMaker versioning to be taken
-    # into account when versioning
-    patch_levels = {'a': 1, 'b': 2, 'c': 3, 'd': 4}
 
     description = __doc__
     input_variables = {
@@ -83,7 +87,7 @@ class FilemakerUpdateURLProcessor(Processor):
     def filterOutServerUpdates(self, obj):
         updates = []
         for pkg in obj:
-            if re.search('Server', pkg["product"]) == None:
+            if re.search(r'Server', pkg["product"]) is None:
                 updates.append(pkg)
         return updates
 
@@ -101,6 +105,10 @@ class FilemakerUpdateURLProcessor(Processor):
         return v1
 
     def findLatestUpdate(self, obj):
+        # an enum-like hash to enable the variant of FileMaker versioning to be taken
+        # into account when versioning
+        patch_levels = {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+
         updates = []
         versions = []
         for pkg in obj:
@@ -113,15 +121,15 @@ class FilemakerUpdateURLProcessor(Processor):
                 patch = version[2]
             build = '0'
             # look for a letter in the patchlevel
-            mo = re.search('([0-9]*)([A-Za-z]*)', patch)
-            if mo != None:
+            mo = re.search(r'([0-9]*)([A-Za-z]*)', patch)
+            if mo is not None:
                 (patch, build) = mo.groups()
                 if build == '':
                     build = 0
                 else:
                     build = patch_levels[build]
-            mo = re.search('([0-9]*)v([0-9]*)', minor)
-            if mo != None:
+            mo = re.search(r'([0-9]*)v([0-9]*)', minor)
+            if mo is not None:
                 (minor, build) = mo.groups()
             versions.append((major, minor, patch, build, version_str))
         sorted_versions = sorted(versions, key=itemgetter(0,1,2,3), reverse=True)
@@ -133,12 +141,11 @@ class FilemakerUpdateURLProcessor(Processor):
 
     def getLatestFilemakerInstaller(self):
         version_str = self.env.get("major_version")
-        req = urllib2.Request(UPDATE_FEED)
         try:
-            f = urllib2.urlopen(req)
+            f = urlopen(UPDATE_FEED)
             data = f.read()
             f.close()
-        except BaseException as e:
+        except Exception as e:
             raise ProcessorError("Can't get to Filemaker Updater feed: %s" % e)
 
         metadata = json.loads(data)
@@ -150,12 +157,12 @@ class FilemakerUpdateURLProcessor(Processor):
         return update
 
     def version_matcher(self, url):
-       	fname = os.path.basename(urlparse.urlsplit(url).path)
-	version_match = re.search(r"([0-9]{2}.[0-9]{0,2}.[0-9]{0,2}.[0-9]{0,4})", fname)
-        if version_match == None:
-	    raise ProcessorError("Something went wrong matching FMP update to full version.")
-	else:
-	    return version_match.group(1) 
+        fname = os.path.basename(urlparse.urlsplit(url).path)
+        version_match = re.search(r"([0-9]{2}.[0-9]{0,2}.[0-9]{0,2}.[0-9]{0,4})", fname)
+        if version_match is None:
+            raise ProcessorError("Something went wrong matching FMP update to full version.")
+        else:
+            return version_match.group(1)
 
     def main(self):
         try:
@@ -164,19 +171,19 @@ class FilemakerUpdateURLProcessor(Processor):
             should_be_full = self.env.get("do_full_installer")
             url = ""
             if should_be_full == 1:
-		update["version"] = self.version_matcher(update["url"])
+                update["version"] = self.version_matcher(update["url"])
                 # extract the version from the URL string - this is a weird setup...
-		url = ("http://fmdl.filemaker.com/maint/107-85rel/fmp_%s.dmg" % update["version"])
+                url = ("http://fmdl.filemaker.com/maint/107-85rel/fmp_%s.dmg" % update["version"])
             else:
                 update["version"] = self.version_matcher(update["url"])
                 url = update["url"]
-	
+
             self.output("URL found '%s'" % url, verbose_level=2)
             self.env["version"] = update["version"]
             self.env["url"] = url
             self.env["package_name"] = update["name"]
             self.env["package_file"] = os.path.basename(urlparse.urlsplit(url).path)
-        except BaseException as err:
+        except Exception as err:
             # handle unexpected errors here
             raise ProcessorError(err)
 
