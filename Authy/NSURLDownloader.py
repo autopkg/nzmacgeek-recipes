@@ -1,13 +1,5 @@
 #!/usr/local/autopkg/python
 #
-# Reworked URLDownloader for Authy Desktop or some other URL where the redirected
-# location includes a space.
-#
-# The processor will function exactly like URLDownloader unless used with the
-# prefetch_and_encode_redirect_url parameter, which grabs the redirect URL
-# then encodes it before then going on to request the destination URL.
-#
-# Refactoring 2021 Graham Pugh
 # Refactoring 2018 Michal Moravec
 # Copyright 2015 Greg Neagle
 #
@@ -22,40 +14,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""See docstring for URLDownloaderForAuthy class"""
+"""See docstring for URLDownloader class"""
 
 import os.path
 import tempfile
-import urllib.parse
+import subprocess
 
-from autopkglib import BUNDLE_ID, ProcessorError, is_mac
-from autopkglib.URLGetter import URLGetter
+from autopkglib import BUNDLE_ID, Processor, ProcessorError, xattr
 
-if is_mac():
-    import xattr
+__all__ = ["NSURLDownloader"]
 
 
-__all__ = ["URLDownloaderForAuthy"]
-
-
-class URLDownloaderForAuthy(URLGetter):
+class NSURLDownloader(Processor):
     """Downloads a URL to the specified download_dir using curl."""
 
     description = __doc__
     input_variables = {
         "url": {"required": True, "description": "The URL to download."},
-        "request_headers": {
-            "required": False,
-            "description": (
-                "Optional dictionary of headers to include with the download request."
-            ),
-        },
-        "curl_opts": {
-            "required": False,
-            "description": (
-                "Optional array of options to include with the download request."
-            ),
-        },
         "download_dir": {
             "required": False,
             "description": (
@@ -66,31 +41,6 @@ class URLDownloaderForAuthy(URLGetter):
         "filename": {
             "required": False,
             "description": "Filename to override the URL's tail.",
-        },
-        "prefetch_and_encode_redirect_url": {
-            "default": False,
-            "required": False,
-            "description": (
-                "If True, URLDownloader attempts to obtain the redirect UTL from HTTP "
-                "headers downloaded before the file itself. It then encodes "
-                "the URL to ensure all characters are valid for the subsequent "
-                "file download."
-            ),
-        },
-        "prefetch_filename": {
-            "default": False,
-            "required": False,
-            "description": (
-                "If True, URLDownloader attempts to determine filename from HTTP "
-                "headers downloaded before the file itself. 'prefetch_filename' "
-                "overrides 'filename' option. Filename is determined from the first "
-                "available source of information in this order:\n"
-                "\t1. Content-Disposition header\n"
-                "\t2. Location header\n"
-                "\t3. 'filename' option (if set)\n"
-                "\t4. last part of 'url'.  \n"
-                "'prefetch_filename' is useful for URLs with redirects."
-            ),
         },
         "CHECK_FILESIZE_ONLY": {
             "default": False,
@@ -127,57 +77,61 @@ class URLDownloaderForAuthy(URLGetter):
                 "last time it was downloaded."
             )
         },
-        "url_downloader_summary_result": {
+        "nsurl_downloader_summary_result": {
             "description": "Description of interesting results."
         },
     }
 
+    def download_with_nscurl(self, url, pathname_temporary):
+        """
+        build an nscurl command based on method (GET, PUT, POST, DELETE)
+        If the URL contains 'uapi' then token should be passed to the auth variable,
+        otherwise the enc_creds variable should be passed to the auth variable
+        """
+        headers_file = "/tmp/nscurl_headers_from_autopkg.txt"
+
+        # build the nscurl command
+        nscurl_cmd = [
+            "/usr/bin/nscurl",
+            "-D",
+            headers_file,
+            "--output",
+            pathname_temporary,
+            url,
+            "-v",
+        ]
+
+        self.output(f"\nnscurl command:\n{' '.join(nscurl_cmd)}", verbose_level=2)
+
+        # now subprocess the nscurl command and build the r tuple which contains the
+        # headers, status code and outputted data
+        subprocess.check_output(nscurl_cmd)
+
+        try:
+            with open(headers_file, "r") as file:
+                headers = file.readlines()
+            r = [x.strip() for x in headers]
+            return r
+        except IOError:
+            print("WARNING: {} not found".format(headers_file))
+
     def getxattr(self, attr):
         """Get a named xattr from a file. Return None if not present."""
+
         if attr in xattr.listxattr(self.env["pathname"]):
             return xattr.getxattr(self.env["pathname"], attr).decode()
         return None
-
-    def prepare_base_curl_cmd(self, url):
-        """Assemble base curl command and return it."""
-        curl_cmd = [
-            self.curl_binary(),
-            "--silent",
-            "--show-error",
-            "--no-buffer",
-            "--dump-header",
-            "-",
-            "--speed-time",
-            "30",
-            "--url",
-            "--location",
-            url,
-        ]
-        if not self.env["prefetch_and_encode_redirect_url"]:
-            curl_cmd.extend(["--location"])
-        return curl_cmd
 
     def clear_zero_file(self, pathname):
         """If file already exists and the size is 0, discard it to download again."""
         if os.path.exists(pathname) and os.path.getsize(pathname) == 0:
             os.remove(pathname)
 
-    def prepare_download_curl_cmd(self, url, pathname_temporary):
-        """Assemble file download curl command and return it."""
-        curl_cmd = self.prepare_base_curl_cmd(url)
-        curl_cmd.extend(["--fail", "--output", pathname_temporary])
-        # Add the common options
-        self.add_curl_common_opts(curl_cmd)
-        # Clear out a potentially zero-byte file
-        self.clear_zero_file(self.env["pathname"])
-        self.add_curl_headers(curl_cmd, self.produce_etag_headers(self.env["pathname"]))
-        return curl_cmd
-
     def clear_vars(self):
         """Clear and initialize variables."""
         # Delete summary result if exists
-        if "url_downloader_summary_result" in self.env:
-            del self.env["url_downloader_summary_result"]
+        if "nsurl_downloader_summary_result" in self.env:
+            del self.env["nsurl_downloader_summary_result"]
 
         # XATTR names for Etag and Last-Modified headers
         self.xattr_etag = f"{BUNDLE_ID}.etag"
@@ -187,66 +141,6 @@ class URLDownloaderForAuthy(URLGetter):
         self.env["etag"] = ""
         self.existing_file_size = None
 
-    def prefetch_and_encode_redirect_url(self):
-        """Attempt to get the redirect URL from HTTP headers and encode it.
-        Useful for redirect URLs with spaces in them."""
-        curl_cmd = self.prepare_base_curl_cmd(self.env["url"])
-        curl_cmd.extend(["--output", "/dev/null"])
-
-        raw_headers = self.download_with_curl(curl_cmd)
-        header = self.parse_headers(raw_headers)
-
-        if header.get("http_redirected", None):
-            redirect_url = header["http_redirected"]
-            self.output(
-                f"URL prefetched from the HTTP Location header: {redirect_url}",
-                verbose_level=2,
-            )
-        else:
-            self.output(
-                "Unable to find URL in the HTTP headers during prefetch",
-                verbose_level=2,
-            )
-            return None
-
-        #  now encode the URL
-        download_url = urllib.parse.quote(redirect_url, safe="/:")
-        self.output(f"Encoded URL: {download_url}", verbose_level=2)
-        return download_url
-
-    def prefetch_filename(self):
-        """Attempt to find filename in HTTP headers."""
-        curl_cmd = self.prepare_base_curl_cmd(self.env["url"])
-        curl_cmd.extend(["--head", "--request", "GET"])
-
-        raw_headers = self.download_with_curl(curl_cmd)
-        header = self.parse_headers(raw_headers)
-
-        if "filename=" in header.get("content-disposition", ""):
-            filename = (
-                header["content-disposition"]
-                .rpartition("filename=")[2]
-                .replace('"', "")
-            )
-            self.output(
-                f"Filename prefetched from the HTTP Content-Disposition header: {filename}",
-                verbose_level=2,
-            )
-        elif header.get("http_redirected", None):
-            filename = header["http_redirected"].rpartition("/")[2]
-            self.output(
-                f"Filename prefetched from the HTTP Location header: {filename}",
-                verbose_level=2,
-            )
-        else:
-            self.output(
-                "Unable to find filename in the HTTP headers during prefetch",
-                verbose_level=2,
-            )
-            return None
-
-        return filename
-
     def get_filename(self):
         """Obtain filename from PKG variable or URL."""
         if "PKG" in self.env:
@@ -254,11 +148,6 @@ class URLDownloaderForAuthy(URLGetter):
             self.env["download_changed"] = True
             self.output(f"Given {self.env['pathname']}, no download needed.")
             return None
-
-        if self.env.get("prefetch_filename", False):
-            filename = self.prefetch_filename()
-            if filename:
-                return filename
 
         if "filename" in self.env:
             filename = self.env["filename"]
@@ -357,11 +246,59 @@ class URLDownloaderForAuthy(URLGetter):
             )
             self.output(f"Storing new ETag header: {header.get('etag')}")
 
-    def main(self):
-        if not is_mac():
-            raise ProcessorError("This processor is Mac-only!")
+    def clear_header(self, header):
+        """Clear header dictionary."""
+        # Save redirect URL before clear
+        http_redirected = header.get("http_redirected", None)
+        header.clear()
+        header["http_result_code"] = "000"
+        header["http_result_description"] = ""
+        # Restore redirect URL
+        header["http_redirected"] = http_redirected
 
-        # Clear and initiazize data structures
+    def parse_http_protocol(self, line, header):
+        """Parse first HTTP header line."""
+        try:
+            header["http_result_code"] = line.split(None, 2)[1]
+            header["http_result_description"] = line.split(None, 2)[2]
+        except IndexError:
+            pass
+
+    def parse_http_header(self, line, header):
+        """Parse single HTTP header line."""
+        part = line.split(None, 1)
+        fieldname = part[0].rstrip(":").lower()
+        try:
+            header[fieldname] = part[1]
+        except IndexError:
+            header[fieldname] = ""
+
+    def parse_headers(self, raw_headers):
+        """Parse headers from nscurl."""
+        header = {}
+        self.clear_header(header)
+        for line in raw_headers:
+            if line.startswith("HTTP/"):
+                self.parse_http_protocol(line, header)
+            elif ": " in line:
+                self.parse_http_header(line, header)
+            elif line == "":
+                # we got an empty line; end of headers (or curl exited)
+                if header.get("http_result_code") in [
+                    "301",
+                    "302",
+                    "303",
+                    "307",
+                    "308",
+                ]:
+                    # redirect, so more headers are coming.
+                    # Throw away the headers we've received so far
+                    header["http_redirected"] = header.get("location", None)
+                    self.clear_header(header)
+        return header
+
+    def main(self):
+        # Clear and initialize data structures
         self.clear_vars()
 
         # Ensure existence of necessary files, directories and paths
@@ -372,17 +309,11 @@ class URLDownloaderForAuthy(URLGetter):
         self.env["pathname"] = os.path.join(download_dir, filename)
         pathname_temporary = self.create_temp_file(download_dir)
 
-        # prefetch and encode the redirect URL if needed
-        if self.env["prefetch_and_encode_redirect_url"]:
-            download_url = self.prefetch_and_encode_redirect_url()
-        else:
-            download_url = self.env["url"]
-
-        # Prepare curl command
-        curl_cmd = self.prepare_download_curl_cmd(download_url, pathname_temporary)
+        # Clear out a potentially zero-byte file
+        self.clear_zero_file(self.env["pathname"])
 
         # Execute curl command and parse headers
-        raw_headers = self.download_with_curl(curl_cmd)
+        raw_headers = self.download_with_nscurl(self.env["url"], pathname_temporary)
         header = self.parse_headers(raw_headers)
 
         if self.download_changed(header):
@@ -400,12 +331,12 @@ class URLDownloaderForAuthy(URLGetter):
 
         # Generate output messages and variables
         self.output(f"Downloaded {self.env['pathname']}")
-        self.env["url_downloader_summary_result"] = {
+        self.env["nsurl_downloader_summary_result"] = {
             "summary_text": "The following new items were downloaded:",
             "data": {"download_path": self.env["pathname"]},
         }
 
 
 if __name__ == "__main__":
-    PROCESSOR = URLDownloaderForAuthy()
+    PROCESSOR = NSURLDownloader()
     PROCESSOR.execute_shell()

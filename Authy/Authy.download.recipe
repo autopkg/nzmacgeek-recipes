@@ -26,14 +26,14 @@
             </dict>
             <dict>
                 <key>Processor</key>
-                <string>URLDownloaderForAuthy</string>
+                <string>NSURLDownloader</string>
                 <key>Arguments</key>
                 <dict>
                     <key>url</key>
                     <string>%url_to_download%</string>
                     <key>filename</key>
                     <string>AuthyDesktop.dmg</string>
-                    <key>prefetch_and_encode_redirect_url</key>
+                    <key>CHECK_FILESIZE_ONLY</key>
                     <true/>
                 </dict>
             </dict>
