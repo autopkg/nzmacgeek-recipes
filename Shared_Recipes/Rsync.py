@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/autopkg/python
 #
 #  Copyright (c) 2015, Facebook, Inc.
 #  All rights reserved.
@@ -22,45 +22,47 @@ __all__ = ["Rsync"]
 
 
 class Rsync(Processor):
-  """Rsyncs a file/directory to another file/directory"""
-  description = __doc__
-  input_variables = {
-    "source_path": {
-      "required": True,
-      "description": ("Path to file or directory to copy from.")
-    },
-    "destination_path": {
-      "required": True,
-      "description": ("Path to file or directory to copy to.")
-    },
-    "rsync_arguments": {
-      "required": False,
-      "description": ("Arguments passed to rsync directly.")
-    },
-    "rsync_path": {
-      "required": False,
-      "description": ("Custom path to rsync. Defaults to /usr/bin/rsync.")
+    """Rsyncs a file/directory to another file/directory"""
+
+    description = __doc__
+    input_variables = {
+        "source_path": {
+            "required": True,
+            "description": ("Path to file or directory to copy from."),
+        },
+        "destination_path": {
+            "required": True,
+            "description": ("Path to file or directory to copy to."),
+        },
+        "rsync_arguments": {
+            "required": False,
+            "description": ("Arguments passed to rsync directly."),
+        },
+        "rsync_path": {
+            "required": False,
+            "description": ("Custom path to rsync. Defaults to /usr/bin/rsync."),
+        },
     }
-  }
-  output_variables = {
-  }
+    output_variables = {}
 
-  __doc__ = description
+    __doc__ = description
 
-  def main(self):
-    rsync_location = self.env.get("rsync_path", "/usr/bin/rsync")
-    rsync_args = self.env.get("rsync_arguments", [])
-    
-    cmd = [rsync_location] + rsync_args + [self.env["source_path"],
-           self.env["destination_path"]]
-    proc = subprocess.Popen(cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-    (rout, rerr) = proc.communicate()
-    if rerr:
-        raise ProcessorError(rerr)
-    self.output(rout)
+    def main(self):
+        rsync_location = self.env.get("rsync_path", "/usr/bin/rsync")
+        rsync_args = self.env.get("rsync_arguments", [])
+
+        cmd = (
+            [rsync_location]
+            + rsync_args
+            + [self.env["source_path"], self.env["destination_path"]]
+        )
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (rout, rerr) = proc.communicate()
+        if rerr:
+            raise ProcessorError(rerr)
+        self.output(rout)
+
 
 if __name__ == "__main__":
-  PROCESSOR = Rsync()
-  PROCESSOR.execute_shell()
+    PROCESSOR = Rsync()
+    PROCESSOR.execute_shell()
