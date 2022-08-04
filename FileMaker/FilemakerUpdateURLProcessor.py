@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/local/autopkg/python
 # FilemakerUpdateURLProcessor.py
 # Fetches information about the latest FileMaker Pro updater.
 #
